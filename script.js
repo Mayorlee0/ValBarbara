@@ -179,14 +179,24 @@ const ButtonDodge = {
         state.lastDodgeTime = now;
         
         const button = elements.noButton;
-        const container = elements.landingScreen;
+        const card = button.closest('.card');
+        
+        // Make button absolute positioned if not already
+        if (!button.classList.contains('dodging')) {
+            button.classList.add('dodging');
+        }
         
         const buttonRect = button.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
         
-        const newPos = this.getRandomPosition(buttonRect, containerRect);
+        // Calculate position relative to card
+        const relativeRect = {
+            width: cardRect.width,
+            height: cardRect.height
+        };
         
-        button.style.position = 'absolute';
+        const newPos = this.getRandomPosition(buttonRect, relativeRect);
+        
         button.style.left = `${newPos.x}px`;
         button.style.top = `${newPos.y}px`;
         
@@ -195,7 +205,7 @@ const ButtonDodge = {
         elements.attemptCounter.textContent = `Attempts: ${state.attempts}`;
         
         // Show dodge message
-        const messageIndex = state.attempts % dodgeMessages.length;
+        const messageIndex = (state.attempts - 1) % dodgeMessages.length;
         elements.dodgeMessage.textContent = dodgeMessages[messageIndex];
         
         // Play sound
@@ -209,7 +219,7 @@ const ButtonDodge = {
     
     setupDesktopDodge() {
         const button = elements.noButton;
-        const proximityThreshold = 80; // Distance in pixels to trigger dodge
+        const proximityThreshold = 100; // Distance in pixels to trigger dodge
         
         const handleMouseMove = (e) => {
             if (!elements.landingScreen.classList.contains('active')) return;
