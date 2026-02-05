@@ -1,13 +1,11 @@
-/* ================================
-   VALENTINE WEBSITE - MAIN SCRIPT
-   Clean, organized, premium interactions
-   ================================ */
-
 // ================================
-// STATE MANAGEMENT
+// VALENTINE WEBSITE - MAIN SCRIPT
 // ================================
 
-const state = {
+'use strict';
+
+// State
+var state = {
     attempts: 0,
     soundEnabled: true,
     audioContext: null,
@@ -16,11 +14,8 @@ const state = {
     lastDodgeTime: 0
 };
 
-// ================================
-// DODGE MESSAGES
-// ================================
-
-const dodgeMessages = [
+// Messages
+var dodgeMessages = [
     "Not today 😌",
     "Nice try, my love.",
     "The universe said 'nope'.",
@@ -33,46 +28,16 @@ const dodgeMessages = [
     "You know you want to say yes 😏"
 ];
 
-// ================================
-// DOM ELEMENTS
-// ================================
-
-const elements = {
-    // Screens
-    landingScreen: document.getElementById('landingScreen'),
-    successScreen: document.getElementById('successScreen'),
-    dateSelectorScreen: document.getElementById('dateSelectorScreen'),
-    confirmationScreen: document.getElementById('confirmationScreen'),
-    
-    // Buttons
-    yesButton: document.getElementById('yesButton'),
-    noButton: document.getElementById('noButton'),
-    muteToggle: document.getElementById('muteToggle'),
-    pickDateButton: document.getElementById('pickDateButton'),
-    screenshotButton: document.getElementById('screenshotButton'),
-    
-    // Modal
-    errorModal: document.getElementById('errorModal'),
-    retryButton: document.getElementById('retryButton'),
-    forcedYesButton: document.getElementById('forcedYesButton'),
-    
-    // Text
-    attemptCounter: document.getElementById('attemptCounter'),
-    dodgeMessage: document.getElementById('dodgeMessage'),
-    chosenDate: document.getElementById('chosenDate'),
-    
-    // Confetti
-    confettiCanvas: document.getElementById('confettiCanvas')
-};
+// DOM Elements
+var elements = {};
 
 // ================================
 // AUDIO SYSTEM
 // ================================
 
-const AudioSystem = {
-    init() {
-        // Load mute preference from localStorage
-        const isMuted = localStorage.getItem('valentineSoundMuted') === 'true';
+var AudioSystem = {
+    init: function() {
+        var isMuted = localStorage.getItem('valentineSoundMuted') === 'true';
         state.soundEnabled = !isMuted;
         
         if (isMuted) {
@@ -80,20 +45,25 @@ const AudioSystem = {
         }
     },
     
-    initContext() {
+    initContext: function() {
         if (!state.audioContext && state.soundEnabled) {
-            state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            try {
+                state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Audio context not supported');
+            }
         }
     },
     
-    playBoop() {
+    playBoop: function() {
         if (!state.soundEnabled || !state.firstInteraction) return;
         
         this.initContext();
-        const ctx = state.audioContext;
+        if (!state.audioContext) return;
         
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
+        var ctx = state.audioContext;
+        var oscillator = ctx.createOscillator();
+        var gainNode = ctx.createGain();
         
         oscillator.connect(gainNode);
         gainNode.connect(ctx.destination);
@@ -108,17 +78,18 @@ const AudioSystem = {
         oscillator.stop(ctx.currentTime + 0.1);
     },
     
-    playSparkle() {
+    playSparkle: function() {
         if (!state.soundEnabled || !state.firstInteraction) return;
         
         this.initContext();
-        const ctx = state.audioContext;
+        if (!state.audioContext) return;
         
-        const frequencies = [523.25, 659.25, 783.99]; // C, E, G
+        var ctx = state.audioContext;
+        var frequencies = [523.25, 659.25, 783.99];
         
-        frequencies.forEach((freq, i) => {
-            const oscillator = ctx.createOscillator();
-            const gainNode = ctx.createGain();
+        frequencies.forEach(function(freq, i) {
+            var oscillator = ctx.createOscillator();
+            var gainNode = ctx.createGain();
             
             oscillator.connect(gainNode);
             gainNode.connect(ctx.destination);
@@ -126,7 +97,7 @@ const AudioSystem = {
             oscillator.frequency.value = freq;
             oscillator.type = 'sine';
             
-            const startTime = ctx.currentTime + (i * 0.1);
+            var startTime = ctx.currentTime + (i * 0.1);
             gainNode.gain.setValueAtTime(0.05, startTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
             
@@ -135,7 +106,7 @@ const AudioSystem = {
         });
     },
     
-    toggle() {
+    toggle: function() {
         state.soundEnabled = !state.soundEnabled;
         localStorage.setItem('valentineSoundMuted', !state.soundEnabled);
         elements.muteToggle.classList.toggle('muted');
@@ -150,17 +121,16 @@ const AudioSystem = {
 // BUTTON DODGE SYSTEM
 // ================================
 
-const ButtonDodge = {
+var ButtonDodge = {
     safeZone: {
-        padding: 60 // Keep button this many pixels from edges
+        padding: 60
     },
     
-    getRandomPosition(buttonRect, containerRect) {
-        const maxX = containerRect.width - buttonRect.width - this.safeZone.padding;
-        const maxY = containerRect.height - buttonRect.height - this.safeZone.padding;
-        
-        const minX = this.safeZone.padding;
-        const minY = this.safeZone.padding;
+    getRandomPosition: function(buttonWidth, buttonHeight, cardWidth, cardHeight) {
+        var maxX = cardWidth - buttonWidth - this.safeZone.padding;
+        var maxY = cardHeight - buttonHeight - this.safeZone.padding;
+        var minX = this.safeZone.padding;
+        var minY = this.safeZone.padding;
         
         return {
             x: Math.random() * (maxX - minX) + minX,
@@ -168,9 +138,8 @@ const ButtonDodge = {
         };
     },
     
-    moveButton() {
-        // Cooldown to prevent spam
-        const now = Date.now();
+    moveButton: function() {
+        var now = Date.now();
         if (state.buttonCooldown || now - state.lastDodgeTime < 500) {
             return;
         }
@@ -178,92 +147,81 @@ const ButtonDodge = {
         state.buttonCooldown = true;
         state.lastDodgeTime = now;
         
-        const button = elements.noButton;
-        const card = button.closest('.card');
+        var button = elements.noButton;
+        var card = button.closest('.card');
         
-        // Make button absolute positioned if not already
         if (!button.classList.contains('dodging')) {
             button.classList.add('dodging');
         }
         
-        const buttonRect = button.getBoundingClientRect();
-        const cardRect = card.getBoundingClientRect();
+        var buttonRect = button.getBoundingClientRect();
+        var cardRect = card.getBoundingClientRect();
         
-        // Calculate position relative to card
-        const relativeRect = {
-            width: cardRect.width,
-            height: cardRect.height
-        };
+        var newPos = this.getRandomPosition(
+            buttonRect.width,
+            buttonRect.height,
+            cardRect.width,
+            cardRect.height
+        );
         
-        const newPos = this.getRandomPosition(buttonRect, relativeRect);
+        button.style.left = newPos.x + 'px';
+        button.style.top = newPos.y + 'px';
         
-        button.style.left = `${newPos.x}px`;
-        button.style.top = `${newPos.y}px`;
-        
-        // Increment attempts
         state.attempts++;
-        elements.attemptCounter.textContent = `Attempts: ${state.attempts}`;
+        elements.attemptCounter.textContent = 'Attempts: ' + state.attempts;
         
-        // Show dodge message
-        const messageIndex = (state.attempts - 1) % dodgeMessages.length;
+        var messageIndex = (state.attempts - 1) % dodgeMessages.length;
         elements.dodgeMessage.textContent = dodgeMessages[messageIndex];
         
-        // Play sound
         AudioSystem.playBoop();
         
-        // Reset cooldown
-        setTimeout(() => {
+        setTimeout(function() {
             state.buttonCooldown = false;
         }, 600);
     },
     
-    setupDesktopDodge() {
-        const button = elements.noButton;
-        const proximityThreshold = 100; // Distance in pixels to trigger dodge
+    setupDesktopDodge: function() {
+        var self = this;
+        var button = elements.noButton;
+        var proximityThreshold = 100;
         
-        const handleMouseMove = (e) => {
+        document.addEventListener('mousemove', function(e) {
             if (!elements.landingScreen.classList.contains('active')) return;
             
-            const rect = button.getBoundingClientRect();
-            const buttonCenterX = rect.left + rect.width / 2;
-            const buttonCenterY = rect.top + rect.height / 2;
+            var rect = button.getBoundingClientRect();
+            var buttonCenterX = rect.left + rect.width / 2;
+            var buttonCenterY = rect.top + rect.height / 2;
             
-            const distance = Math.sqrt(
+            var distance = Math.sqrt(
                 Math.pow(e.clientX - buttonCenterX, 2) + 
                 Math.pow(e.clientY - buttonCenterY, 2)
             );
             
             if (distance < proximityThreshold) {
-                this.moveButton();
+                self.moveButton();
             }
-        };
-        
-        document.addEventListener('mousemove', handleMouseMove);
+        });
     },
     
-    setupMobileDodge() {
-        const button = elements.noButton;
+    setupMobileDodge: function() {
+        var self = this;
+        var button = elements.noButton;
         
-        const handleTouch = (e) => {
+        button.addEventListener('touchstart', function(e) {
             if (!elements.landingScreen.classList.contains('active')) return;
-            
             e.preventDefault();
-            this.moveButton();
-        };
+            self.moveButton();
+        }, { passive: false });
         
-        button.addEventListener('touchstart', handleTouch, { passive: false });
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', function(e) {
             if (!elements.landingScreen.classList.contains('active')) return;
-            
-            // If click somehow succeeded, show error modal
             e.preventDefault();
             showErrorModal();
         });
     },
     
-    init() {
-        // Detect device type
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    init: function() {
+        var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
         if (isMobile) {
             this.setupMobileDodge();
@@ -277,12 +235,12 @@ const ButtonDodge = {
 // CONFETTI SYSTEM
 // ================================
 
-const Confetti = {
+var Confetti = {
     particles: [],
     animationId: null,
     
-    createParticle() {
-        const colors = ['#ff4d6d', '#ffb3c1', '#ff6b9d', '#ffc2d1', '#ff85a1'];
+    createParticle: function() {
+        var colors = ['#ff4d6d', '#ffb3c1', '#ff6b9d', '#ffc2d1', '#ff85a1'];
         
         return {
             x: Math.random() * window.innerWidth,
@@ -296,28 +254,28 @@ const Confetti = {
         };
     },
     
-    start() {
-        // Check for reduced motion preference
+    start: function() {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             return;
         }
         
-        const canvas = elements.confettiCanvas;
+        var canvas = elements.confettiCanvas;
         canvas.classList.add('active');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
-        const ctx = canvas.getContext('2d');
+        var ctx = canvas.getContext('2d');
+        var self = this;
         
-        // Create particles
-        for (let i = 0; i < 150; i++) {
+        for (var i = 0; i < 150; i++) {
             this.particles.push(this.createParticle());
         }
         
-        const animate = () => {
+        function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            this.particles.forEach((particle, index) => {
+            for (var i = self.particles.length - 1; i >= 0; i--) {
+                var particle = self.particles[i];
                 particle.y += particle.speedY;
                 particle.x += particle.speedX;
                 particle.rotation += particle.rotationSpeed;
@@ -329,27 +287,19 @@ const Confetti = {
                 ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
                 ctx.restore();
                 
-                // Remove particles that are off screen
                 if (particle.y > canvas.height) {
-                    this.particles.splice(index, 1);
+                    self.particles.splice(i, 1);
                 }
-            });
+            }
             
-            if (this.particles.length > 0) {
-                this.animationId = requestAnimationFrame(animate);
+            if (self.particles.length > 0) {
+                self.animationId = requestAnimationFrame(animate);
             } else {
                 canvas.classList.remove('active');
             }
-        };
+        }
         
         animate();
-    },
-    
-    stop() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-            this.particles = [];
-        }
     }
 };
 
@@ -358,12 +308,10 @@ const Confetti = {
 // ================================
 
 function showScreen(screenElement) {
-    // Hide all screens
-    document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.remove('active');
-    });
-    
-    // Show target screen
+    var allScreens = document.querySelectorAll('.screen');
+    for (var i = 0; i < allScreens.length; i++) {
+        allScreens[i].classList.remove('active');
+    }
     screenElement.classList.add('active');
 }
 
@@ -380,14 +328,10 @@ function hideErrorModal() {
 // ================================
 
 function handleYesClick() {
-    // Play sparkle sound
     AudioSystem.playSparkle();
-    
-    // Start confetti
     Confetti.start();
     
-    // Show success screen after brief delay
-    setTimeout(() => {
+    setTimeout(function() {
         showScreen(elements.successScreen);
     }, 600);
 }
@@ -397,22 +341,16 @@ function handleYesClick() {
 // ================================
 
 function setupDateSelection() {
-    const dateOptions = document.querySelectorAll('.date-option');
+    var dateOptions = document.querySelectorAll('.date-option');
     
-    dateOptions.forEach(option => {
-        option.addEventListener('click', () => {
-            const choice = option.getAttribute('data-choice');
-            
-            // Play sound
+    for (var i = 0; i < dateOptions.length; i++) {
+        dateOptions[i].addEventListener('click', function() {
+            var choice = this.getAttribute('data-choice');
             AudioSystem.playBoop();
-            
-            // Update confirmation screen
             elements.chosenDate.textContent = choice;
-            
-            // Show confirmation
             showScreen(elements.confirmationScreen);
         });
-    });
+    }
 }
 
 // ================================
@@ -420,17 +358,17 @@ function setupDateSelection() {
 // ================================
 
 function setupEventListeners() {
-    // Enable first interaction flag
-    document.addEventListener('click', () => {
+    // Enable first interaction
+    document.addEventListener('click', function() {
         state.firstInteraction = true;
     }, { once: true });
     
-    document.addEventListener('touchstart', () => {
+    document.addEventListener('touchstart', function() {
         state.firstInteraction = true;
     }, { once: true });
     
     // Mute toggle
-    elements.muteToggle.addEventListener('click', () => {
+    elements.muteToggle.addEventListener('click', function() {
         AudioSystem.toggle();
     });
     
@@ -439,31 +377,31 @@ function setupEventListeners() {
     
     // Error modal buttons
     elements.retryButton.addEventListener('click', hideErrorModal);
-    elements.forcedYesButton.addEventListener('click', () => {
+    elements.forcedYesButton.addEventListener('click', function() {
         hideErrorModal();
         handleYesClick();
     });
     
     // Pick date button
-    elements.pickDateButton.addEventListener('click', () => {
+    elements.pickDateButton.addEventListener('click', function() {
         AudioSystem.playBoop();
         showScreen(elements.dateSelectorScreen);
     });
     
     // Screenshot button
-    elements.screenshotButton.addEventListener('click', () => {
+    elements.screenshotButton.addEventListener('click', function() {
         AudioSystem.playBoop();
     });
     
     // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && elements.errorModal.classList.contains('active')) {
             hideErrorModal();
         }
     });
     
-    // Handle window resize for confetti
-    window.addEventListener('resize', () => {
+    // Handle window resize
+    window.addEventListener('resize', function() {
         if (elements.confettiCanvas.classList.contains('active')) {
             elements.confettiCanvas.width = window.innerWidth;
             elements.confettiCanvas.height = window.innerHeight;
@@ -475,7 +413,29 @@ function setupEventListeners() {
 // INITIALIZATION
 // ================================
 
+function initializeElements() {
+    elements = {
+        landingScreen: document.getElementById('landingScreen'),
+        successScreen: document.getElementById('successScreen'),
+        dateSelectorScreen: document.getElementById('dateSelectorScreen'),
+        confirmationScreen: document.getElementById('confirmationScreen'),
+        yesButton: document.getElementById('yesButton'),
+        noButton: document.getElementById('noButton'),
+        muteToggle: document.getElementById('muteToggle'),
+        pickDateButton: document.getElementById('pickDateButton'),
+        screenshotButton: document.getElementById('screenshotButton'),
+        errorModal: document.getElementById('errorModal'),
+        retryButton: document.getElementById('retryButton'),
+        forcedYesButton: document.getElementById('forcedYesButton'),
+        attemptCounter: document.getElementById('attemptCounter'),
+        dodgeMessage: document.getElementById('dodgeMessage'),
+        chosenDate: document.getElementById('chosenDate'),
+        confettiCanvas: document.getElementById('confettiCanvas')
+    };
+}
+
 function init() {
+    initializeElements();
     AudioSystem.init();
     ButtonDodge.init();
     setupDateSelection();
